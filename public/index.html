@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Manager</title>
+    <!-- Google Fonts - Outfit (Modern Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- Flatpickr Date Picker -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>"
+    />
+  </head>
+
+  <body>
+    <!-- Access Key Verification Overlay -->
+    <div class="access-verify-overlay" id="accessVerifyOverlay">
+      <div class="access-verify-container">
+        <div class="access-verify-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2 class="access-verify-title">访问验证</h2>
+        <p class="access-verify-desc">请输入访问密钥以继续</p>
+
+        <form class="access-verify-form" id="accessVerifyForm">
+          <div class="access-input-wrapper">
+            <input
+              type="password"
+              id="accessKeyInput"
+              class="access-key-input"
+              placeholder="请输入访问密钥"
+              autocomplete="off"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-visibility-btn"
+              id="toggleVisibilityBtn"
+              title="显示/隐藏密钥"
+            >
+              <svg
+                class="eye-icon eye-off"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                ></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+              <svg
+                class="eye-icon eye-on"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+
+          <button type="submit" class="access-verify-btn" id="accessVerifyBtn">
+            <span class="btn-text">验证</span>
+            <span class="btn-loading" style="display: none">
+              <svg class="spinner" viewBox="0 0 24 24">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                ></circle>
+              </svg>
+              验证中...
+            </span>
+          </button>
+
+          <div
+            class="access-verify-error"
+            id="accessVerifyError"
+            style="display: none"
+          ></div>
+        </form>
+
+        <div class="access-verify-footer">
+          <svg
+            class="info-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>如需访问权限，请联系管理员</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ambient Background Effects -->
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+
+    <div class="app-container">
+      <!-- Glass Dashboard -->
+      <div class="glass-dashboard">
+        <!-- Sidebar / Header (Responsive) -->
+        <header class="glass-header">
+          <div class="brand">
+            <div class="logo-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                />
+              </svg>
+            </div>
+            <h1 class="site-title" id="siteTitle">Domain Manager</h1>
+          </div>
+
+          <div class="header-actions">
+            <button class="icon-btn" id="langBtn" title="Switch Language">
+              <span
+                class="lang-text"
+                style="font-weight: 700; font-size: 0.9rem"
+                >CN</span
+              >
+            </button>
+            <button class="icon-btn" id="settingsBtn" title="Settings">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                ></path>
+              </svg>
+            </button>
+            <button class="btn btn-primary btn-glow" id="addDomainBtn">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>New Domain</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Stats Section -->
+        <section class="stats-section" id="statsContainer">
+          <div class="stat-card glass-card">
+            <div class="stat-icon-wrapper icon-blue">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                ></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="statTotal">0</div>
+              <div class="stat-label">Total Domains</div>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card">
+            <div class="stat-icon-wrapper icon-orange">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="statExpiring30">0</div>
+              <div class="stat-label">Expiring (30d)</div>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card">
+            <div class="stat-icon-wrapper icon-red">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                ></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="statExpiring7">0</div>
+              <div class="stat-label">Expiring (7d)</div>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card">
+            <div class="stat-icon-wrapper icon-purple">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="statExpired">0</div>
+              <div class="stat-label">Expired</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+          <!-- Domain Table Container -->
+          <div class="domain-table-container">
+            <!-- Search & Filter Toolbar -->
+            <div class="toolbar">
+              <div class="search-wrapper">
+                <svg
+                  class="search-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="glass-input"
+                  placeholder="Search domains..."
+                />
+              </div>
+
+              <div class="filter-wrapper">
+                <button class="btn btn-ghost" id="filterBtn">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polygon
+                      points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
+                    ></polygon>
+                  </svg>
+                  <span>Filter</span>
+                </button>
+
+                <!-- Filter Dropdown -->
+                <div class="filter-dropdown glass-panel" id="filterPanel">
+                  <div class="filter-group">
+                    <div class="filter-label">TLD</div>
+                    <div class="filter-tags" id="suffixFilters"></div>
+                  </div>
+                  <div class="filter-group">
+                    <div class="filter-label">Registrar</div>
+                    <div class="filter-tags" id="registrarFilters"></div>
+                  </div>
+                  <div class="filter-group">
+                    <div class="filter-label">Hosting</div>
+                    <div class="filter-tags" id="hostingFilters"></div>
+                  </div>
+                  <div class="filter-actions">
+                    <button class="btn btn-text" id="clearFilters">
+                      Clear
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="applyFilters">
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Domain List Header -->
+            <div class="domain-list-header mobile-hide">
+              <div class="header-col">Domain</div>
+              <div class="header-col">Registrar</div>
+              <div class="header-col">Hosting</div>
+              <div class="header-col">Purchase</div>
+              <div class="header-col">Renewal</div>
+              <div class="header-col">Expiry Date</div>
+              <div class="header-col">Actions</div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state" style="display: none">
+              <div class="spinner"></div>
+              <p>Loading domains...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none">
+              <div class="empty-illustration">🔍</div>
+              <h3>No domains found</h3>
+              <p>Try adjusting your filters or add a new domain.</p>
+            </div>
+
+            <!-- Domain List -->
+            <div id="domainList" class="domain-grid">
+              <!-- Domain cards will be injected here -->
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add/Edit Domain Modal -->
+    <div class="modal-overlay" id="domainModal">
+      <div class="modal-glass">
+        <div class="modal-header">
+          <h2 id="modalTitle">Add Domain</h2>
+          <button class="modal-close" id="modalClose">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <form id="domainForm" class="modal-body">
+          <input type="hidden" id="domainId" />
+
+          <div class="form-group">
+            <label for="domainName">Domain Name</label>
+            <input
+              type="text"
+              id="domainName"
+              placeholder="example.com"
+              required
+              class="glass-input"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="registrar">Registrar</label>
+              <input
+                type="text"
+                id="registrar"
+                placeholder="e.g. Namecheap"
+                class="glass-input"
+              />
+            </div>
+            <div class="form-group">
+              <label for="registrarUrl">Registrar URL</label>
+              <input
+                type="url"
+                id="registrarUrl"
+                placeholder="https://..."
+                class="glass-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hostingProvider">Hosting</label>
+              <input
+                type="text"
+                id="hostingProvider"
+                placeholder="e.g. Cloudflare"
+                class="glass-input"
+              />
+            </div>
+            <div class="form-group">
+              <label for="hostingUrl">Hosting URL</label>
+              <input
+                type="url"
+                id="hostingUrl"
+                placeholder="https://..."
+                class="glass-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="currencySymbol">Currency</label>
+              <input
+                type="text"
+                id="currencySymbol"
+                placeholder="¥"
+                maxlength="3"
+                value="¥"
+                class="glass-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="purchasePrice">Purchase Price</label>
+              <div class="price-input-group">
+                <input
+                  type="text"
+                  id="purchasePrice"
+                  placeholder="0.00 (Enter -1 for free)"
+                  class="glass-input price-input"
+                />
+                <input
+                  type="text"
+                  id="purchasePeriod"
+                  placeholder="e.g. 一年"
+                  class="glass-input period-input"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="renewalPrice">Renewal Price</label>
+              <div class="price-input-group">
+                <input
+                  type="text"
+                  id="renewalPrice"
+                  placeholder="0.00 (Enter -1 for free)"
+                  class="glass-input price-input"
+                />
+                <input
+                  type="text"
+                  id="renewalPeriod"
+                  placeholder="e.g. 三年"
+                  class="glass-input period-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="expireDate">Expiry Date</label>
+            <div class="date-input-group">
+              <input
+                type="text"
+                id="expireDate"
+                class="glass-input"
+                placeholder="YYYY-MM-DD"
+              />
+              <button type="button" id="noExpireBtn" class="btn-no-expire">
+                <span class="icon">∞</span>
+                <span class="text">Indefinite</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              placeholder="Any additional details..."
+              rows="3"
+              class="glass-input"
+            ></textarea>
+          </div>
+        </form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="modalCancel">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="domainForm"
+            class="btn btn-primary btn-glow"
+            id="modalSubmit"
+          >
+            Save Domain
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+      <div class="modal-glass">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="modal-close" id="settingsModalClose">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <form id="settingsForm" class="modal-body">
+          <div class="form-group">
+            <label for="siteName">Site Name</label>
+            <input
+              type="text"
+              id="siteName"
+              placeholder="Domain Manager"
+              class="glass-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="notifyDays">Notification Days</label>
+            <input
+              type="text"
+              id="notifyDays"
+              placeholder="30,7"
+              class="glass-input"
+            />
+            <small class="form-hint">Comma separated days, e.g. 30,7</small>
+          </div>
+
+      
+
+          <div class="form-group">
+            <label for="telegramBotToken">Telegram Bot Token</label>
+            <div class="input-with-action">
+              <input
+                type="text"
+                id="telegramBotToken"
+                placeholder="123456:ABC..."
+                class="glass-input"
+              />
+              <button
+                type="button"
+                class="btn-icon-action telegram-btn"
+                id="testTelegramBtn"
+                title="Send Test Message"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.67-.52.36-.99.53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.48 1.02-.73 3.99-1.73 6.65-2.87 7.98-3.43 3.8-1.58 4.59-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.44.01.11.03.35.01.54z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="telegramChatId">Telegram Chat ID</label>
+            <input
+              type="text"
+              id="telegramChatId"
+              placeholder="123456789"
+              class="glass-input"
+            />
+            <small class="form-hint"
+              >Your Telegram Chat ID to receive notifications</small
+            >
+          </div>
+
+          <div class="form-group">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <label for="telegramNotifyTemplate">Notification Template</label>
+              <select id="templatePreset" class="template-preset-select">
+                <option value="">📋 Select Preset</option>
+                <option value="default">⚠️ Default (Bilingual)</option>
+                <option value="simple">💬 Simple</option>
+                <option value="detailed">📝 Detailed</option>
+                <option value="urgent">🚨 Urgent Alert</option>
+              </select>
+            </div>
+            <textarea
+              id="telegramNotifyTemplate"
+              rows="5"
+              class="glass-input"
+              placeholder="Select a preset or write your own template..."
+            ></textarea>
+            <small class="form-hint"
+              >Variables: {domain}, {registrar}, {expire_date},
+              {days_left}</small
+            >
+          </div>
+        </form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="settingsCancel">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="settingsForm"
+            class="btn btn-primary btn-glow"
+            id="settingsSave"
+          >
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+      <div class="modal-glass modal-small">
+        <div class="modal-header">
+          <h2>Confirm Delete</h2>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to delete
+            <strong id="deleteDomainName" class="text-highlight"></strong>? This
+            action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="deleteCancel">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger btn-glow"
+            id="deleteConfirm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Flatpickr JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

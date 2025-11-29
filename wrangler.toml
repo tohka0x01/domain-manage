@@ -1,0 +1,32 @@
+# Cloudflare Workers 配置文件
+name = "domain-manage"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+# 静态资源配置（新版 wrangler 推荐方式）
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "DB"
+database_name = "domain-manage-db"
+database_id = "your-database-id-here"  # 部署时替换为实际的数据库ID
+
+# 开发环境配置
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Cron Triggers 定时任务配置
+# 每天 UTC 01:00 执行（北京时间 09:00）
+[triggers]
+crons = ["0 1 * * *"]
+
+# 环境变量 - 访问密钥配置
+[vars]
+# 设置访问密钥以保护页面访问
+# 生产环境建议使用强密码，开发环境可以使用简单密码
+# 当前密钥（自动生成）: 请妥善保管此密钥，如需修改可重新生成
+ACCESS_KEY = "feaec8ba5179ad8d41da04ebe5abf2ac137ab7ee65e2fafc"

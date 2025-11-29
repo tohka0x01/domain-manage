@@ -1,0 +1,30 @@
+{
+  "name": "domain-manage",
+  "version": "1.0.0",
+  "description": "域名管理系统 - 基于 Cloudflare Workers + D1",
+  "main": "src/worker.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create domain-manage-db",
+    "db:init": "wrangler d1 execute domain-manage-db --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute domain-manage-db --local --file=./schema.sql"
+  },
+  "keywords": [
+    "domain",
+    "management",
+    "cloudflare",
+    "workers",
+    "d1"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tohka0x01/domain-manage.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
