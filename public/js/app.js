@@ -133,14 +133,20 @@ function initElements() {
 function init() {
   console.log("Initializing App...");
 
-  // Check access verification first
+  // ⚠️ SECURITY: 先检查验证状态，只初始化 UI，不加载数据
+  // 数据加载会在验证通过后由 hideAccessOverlay() 函数触发
   checkAccessVerification();
 
   initElements();
   initEventListeners();
   initFlatpickr();
   updateUIText();
-  loadData();
+
+  // ✅ 如果已经验证过（localStorage 中有记录），则加载数据
+  // 如果未验证，数据会在 hideAccessOverlay() 中加载
+  if (isAccessVerified) {
+    loadData();
+  }
 }
 
 if (document.readyState === "loading") {
@@ -1336,6 +1342,15 @@ function hideAccessOverlay() {
   if (overlay) {
     overlay.style.display = "none";
   }
+
+  // ⚠️ SECURITY: 验证通过后显示主内容
+  const appContainer = document.querySelector(".app-container");
+  if (appContainer) {
+    appContainer.classList.add("verified");
+  }
+
+  // ✅ 验证通过后加载数据
+  loadData();
 }
 
 /**

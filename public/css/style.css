@@ -153,10 +153,15 @@ body {
 
 /* ========== Layout ========== */
 .app-container {
-  display: flex;
+  display: none; /* ⚠️ SECURITY: 默认隐藏，仅验证通过后显示 */
   justify-content: center;
   padding: var(--space-md);
   min-height: 100vh;
+}
+
+/* 验证通过后显示主内容 */
+.app-container.verified {
+  display: flex;
 }
 
 .glass-dashboard {
@@ -1903,6 +1908,12 @@ select:focus {
 .access-verify-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* ✅ 确保按钮文本颜色为白色 */
+.access-verify-btn .btn-text,
+.access-verify-btn .btn-loading {
+  color: white;
 }
 
 .access-verify-btn .btn-loading {
