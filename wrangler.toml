@@ -13,7 +13,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "domain-manage-db"
-database_id = ""
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
 # 开发环境配置
