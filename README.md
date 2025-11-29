@@ -55,27 +55,50 @@
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tohka0x01/domain-manage)
 
-> **✨ 全自动部署流程**：
+> **📋 部署流程**：
 >
 > 1. **一键启动** - 点击按钮后自动 fork 项目到你的 GitHub 账号
 > 2. **授权连接** - 授权 Cloudflare Workers 访问你的 GitHub 仓库
-> 3. **自动配置** - Cloudflare 会自动：
->    - 创建 D1 数据库实例
->    - 运行数据库迁移脚本（创建表和初始数据）
->    - 部署 Worker 应用
->    - 绑定静态资源
-> 4. **配置密钥** - 部署后需要设置 `ACCESS_KEY` 环境变量（见下方说明）
+> 3. **部署 Worker** - Cloudflare 会自动部署 Worker 应用和静态资源
+> 4. **初始化数据库** - ⚠️ **需要手动操作**（见下方步骤）
+> 5. **配置密钥** - 设置 `ACCESS_KEY` 环境变量（见下方说明）
 >
-> **🔐 设置访问密钥（必须）**：
+> **📦 步骤 1：创建和初始化 D1 数据库（必须）**：
 >
-> 部署完成后，在 Cloudflare Workers 管理页面：
+> 部署完成后，需要手动创建数据库：
+>
+> ```bash
+> # 1. 克隆你 fork 的仓库到本地
+> git clone https://github.com/你的用户名/domain-manage.git
+> cd domain-manage
+>
+> # 2. 安装依赖
+> npm install
+>
+> # 3. 创建 D1 数据库
+> npx wrangler d1 create domain-manage-db
+>
+> # 4. 复制输出的 database_id，更新本地 wrangler.toml 第 16 行
+> # 改为 database_id = "你的真实数据库ID"
+>
+> # 5. 初始化数据库表结构（二选一）
+> # 方式 A：使用 migrations（推荐）
+> npx wrangler d1 migrations apply DB --remote
+>
+> # 方式 B：使用 schema.sql
+> npx wrangler d1 execute domain-manage-db --remote --file=./schema.sql
+> ```
+>
+> **🔐 步骤 2：设置访问密钥（必须）**：
+>
+> 在 Cloudflare Workers 管理页面：
 >
 > 1. 进入 **Settings** → **Variables**
 > 2. 修改 `ACCESS_KEY` 为你的自定义密码（建议使用强密码）
 > 3. 点击 **Save** 并重新部署
 > 4. 访问你的 Worker URL，使用设置的密钥登录
 >
-> **🎯 可选配置**：
+> **🎯 步骤 3：可选配置**：
 >
 > - **Telegram 通知** - 在系统设置页面配置 Bot Token 和 Chat ID
 > - **通知提前天数** - 自定义到期提醒时间（默认 30 天和 7 天）

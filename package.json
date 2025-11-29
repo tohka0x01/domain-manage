@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:with-migrations": "npm run db:migrations:apply && wrangler deploy",
+    "deploy": "npm run db:migrations:apply && wrangler deploy",
     "db:create": "wrangler d1 create domain-manage-db",
     "db:init": "wrangler d1 execute domain-manage-db --remote --file=./schema.sql",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
