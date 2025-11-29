@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run db:migrations:apply && wrangler deploy",
     "db:create": "wrangler d1 create domain-manage-db",
-    "db:init": "wrangler d1 execute domain-manage-db --file=./schema.sql",
-    "db:init:local": "wrangler d1 execute domain-manage-db --local --file=./schema.sql"
+    "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
+    "db:migrations:apply:local": "wrangler d1 migrations apply DB --local",
+    "db:migrations:create": "wrangler d1 migrations create DB"
   },
   "keywords": [
     "domain",
@@ -26,5 +27,15 @@
   "license": "MIT",
   "devDependencies": {
     "wrangler": "^3.0.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "**域名管理数据库** - 用于存储域名信息、到期时间、价格等数据。\n\n一键部署时会自动创建此 D1 数据库并运行初始化脚本，无需手动操作。\n\n数据库包含两个表：\n- `domains`: 域名信息（域名、注册商、到期日期、价格等）\n- `settings`: 系统设置（站点名称、Telegram 通知配置等）"
+      },
+      "ASSETS": {
+        "description": "**静态资源** - 自动绑定 public 目录中的 HTML、CSS、JavaScript 文件，用于前端页面展示。"
+      }
+    }
   }
 }
