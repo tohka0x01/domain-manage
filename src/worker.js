@@ -93,6 +93,46 @@ function addCORSHeaders(response) {
  * API 路由处理
  */
 async function handleAPI(request, env, path, method) {
+  // ========== API 鉴权中间件 ==========
+  // 公开端点白名单（不需要鉴权的端点）
+  const publicEndpoints = ["/api/verify"];
+
+  // 如果不是公开端点，则需要验证访问密钥
+  if (!publicEndpoints.includes(path)) {
+    const accessKey = request.headers.get("X-Access-Key");
+
+    // 检查是否提供了访问密钥
+    if (!accessKey) {
+      return new Response(
+        JSON.stringify({
+          error: "未授权访问：缺少访问密钥",
+          code: "MISSING_ACCESS_KEY",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 验证访问密钥是否正确
+    if (accessKey !== env.ACCESS_KEY) {
+      return new Response(
+        JSON.stringify({
+          error: "未授权访问：访问密钥错误",
+          code: "INVALID_ACCESS_KEY",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 鉴权通过，继续处理请求
+  }
+  // ========== 鉴权中间件结束 ==========
+
   // 域名相关 API
   if (path === "/api/domains" && method === "GET") {
     return getDomains(env);

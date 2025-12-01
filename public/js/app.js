@@ -5,6 +5,35 @@
 
 const API_BASE = "/api";
 
+/**
+ * 统一 API 请求函数 - 自动添加认证 Header
+ * @param {string} url - 请求 URL
+ * @param {object} options - fetch 选项
+ * @returns {Promise<Response>}
+ */
+async function apiRequest(url, options = {}) {
+  const accessKey = localStorage.getItem("access_key");
+
+  // 合并 headers，自动添加 X-Access-Key
+  const headers = {
+    ...options.headers,
+  };
+
+  // 只对需要鉴权的端点添加 X-Access-Key
+  // /api/verify 不需要鉴权（白名单）
+  if (!url.includes("/api/verify") && accessKey) {
+    headers["X-Access-Key"] = accessKey;
+  }
+
+  // 合并配置
+  const finalOptions = {
+    ...options,
+    headers,
+  };
+
+  return fetch(url, finalOptions);
+}
+
 // Access verification state
 let isAccessVerified = false;
 
@@ -448,7 +477,7 @@ async function fetchWithTimeout(resource, options = {}) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(resource, {
+    const response = await apiRequest(resource, {
       ...options,
       signal: controller.signal,
     });
@@ -1146,7 +1175,7 @@ async function handleDomainSubmit(e) {
       : `${API_BASE}/domains`;
     const method = editingDomainId ? "PUT" : "POST";
 
-    const response = await fetch(url, {
+    const response = await apiRequest(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -1173,9 +1202,12 @@ async function confirmDelete() {
   if (!deletingDomainId) return;
 
   try {
-    const response = await fetch(`${API_BASE}/domains/${deletingDomainId}`, {
-      method: "DELETE",
-    });
+    const response = await apiRequest(
+      `${API_BASE}/domains/${deletingDomainId}`,
+      {
+        method: "DELETE",
+      }
+    );
     if (response.ok) {
       showToast(t("toastDeleted"), "success");
       closeModal(elements.deleteModal);
@@ -1200,7 +1232,7 @@ async function handleSettingsSubmit(e) {
   };
 
   try {
-    const response = await fetch(`${API_BASE}/settings`, {
+    const response = await apiRequest(`${API_BASE}/settings`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -1235,7 +1267,7 @@ async function handleTelegramTest() {
   btn.disabled = true;
 
   try {
-    const response = await fetch(`${API_BASE}/test-telegram`, {
+    const response = await apiRequest(`${API_BASE}/test-telegram`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, chatId }),
@@ -1271,7 +1303,7 @@ async function handleBackup() {
   btn.disabled = true;
 
   try {
-    const response = await fetch(`${API_BASE}/backup`, {
+    const response = await apiRequest(`${API_BASE}/backup`, {
       method: "GET",
     });
 
@@ -1349,7 +1381,7 @@ async function handleImport(event) {
     const backupData = JSON.parse(fileContent);
 
     // 发送导入请求
-    const response = await fetch(`${API_BASE}/import`, {
+    const response = await apiRequest(`${API_BASE}/import`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(backupData),
@@ -1561,7 +1593,7 @@ async function handleAccessVerification() {
   errorDiv.style.display = "none";
 
   try {
-    const response = await fetch(`${API_BASE}/verify`, {
+    const response = await apiRequest(`${API_BASE}/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1575,6 +1607,8 @@ async function handleAccessVerification() {
       // Verification successful
       isAccessVerified = true;
       localStorage.setItem("access_verified", "true");
+      // ⚠️ 关键修复：保存访问密钥供后续 API 请求使用
+      localStorage.setItem("access_key", accessKey);
 
       // Hide overlay with animation
       setTimeout(() => {

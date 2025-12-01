@@ -634,6 +634,233 @@ database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 ## 🔌 API 接口文档
 
+### 🔐 API 鉴权机制
+
+本系统采用 **HTTP Header 鉴权**方式保护 API 接口，防止未授权访问。除公开端点外，所有 API 请求必须携带正确的访问密钥。
+
+#### 鉴权流程
+
+1. **用户首次访问** → 显示密钥验证页面
+2. **输入正确密钥** → 验证成功，密钥存储到 `localStorage`
+3. **后续 API 请求** → 自动携带 `X-Access-Key` header
+4. **服务端验证** → 对比密钥，验证通过则返回数据
+
+#### 配置访问密钥
+
+**本地开发环境：**
+
+编辑 `wrangler.toml` 文件：
+
+```toml
+[vars]
+ACCESS_KEY = "your-secure-password"  # 自定义密钥
+```
+
+**生产环境（Cloudflare Workers）：**
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 **Workers & Pages** → 选择你的项目
+3. 点击 **Settings** → **Variables**
+4. 添加或编辑环境变量：
+   - **Variable name**: `ACCESS_KEY`
+   - **Value**: `your-secure-password`（建议使用强密码）
+5. 点击 **Save and Deploy**
+
+**生成强密钥：**
+
+```bash
+# 使用 Node.js 生成随机密钥（推荐）
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# 输出示例：3f5a8b2c1e9d4f7a6b3c8e1d9f2a5c7b4e6d8f1a3c5b7e9d2f4a6c8e1b3d5f7a
+```
+
+#### 客户端请求示例
+
+**✅ 正确的请求（携带鉴权 header）：**
+
+```javascript
+// JavaScript Fetch API
+fetch("/api/domains", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Access-Key": "your-access-key", // 必须携带
+  },
+})
+  .then((response) => response.json())
+  .then((data) => console.log(data));
+```
+
+```bash
+# cURL 命令行
+curl -X GET https://your-domain.workers.dev/api/domains \
+  -H "Content-Type: application/json" \
+  -H "X-Access-Key: your-access-key"
+```
+
+```python
+# Python requests
+import requests
+
+headers = {
+    'Content-Type': 'application/json',
+    'X-Access-Key': 'your-access-key'
+}
+
+response = requests.get(
+    'https://your-domain.workers.dev/api/domains',
+    headers=headers
+)
+print(response.json())
+```
+
+**❌ 错误的请求（缺少鉴权 header）：**
+
+```javascript
+// 缺少 X-Access-Key header
+fetch("/api/domains", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
+  .then((response) => response.json())
+  .then((data) => console.log(data));
+
+// 返回 401 Unauthorized
+```
+
+#### 白名单端点（无需鉴权）
+
+以下端点**不需要**携带 `X-Access-Key`：
+
+| 路径          | 说明         | 原因             |
+| ------------- | ------------ | ---------------- |
+| `/api/verify` | 验证访问密钥 | 用于首次登录验证 |
+
+所有其他 API 端点均需鉴权。
+
+#### 鉴权失败错误处理
+
+**场景 1：缺少访问密钥**
+
+```json
+// 请求
+GET /api/domains
+Headers: (无 X-Access-Key)
+
+// 响应（401 Unauthorized）
+{
+  "error": "未授权访问：缺少访问密钥",
+  "code": "MISSING_ACCESS_KEY"
+}
+```
+
+**场景 2：访问密钥错误**
+
+```json
+// 请求
+GET /api/domains
+Headers: X-Access-Key: wrong-password
+
+// 响应（401 Unauthorized）
+{
+  "error": "未授权访问：访问密钥错误",
+  "code": "INVALID_ACCESS_KEY"
+}
+```
+
+**场景 3：鉴权成功**
+
+```json
+// 请求
+GET /api/domains
+Headers: X-Access-Key: correct-password
+
+// 响应（200 OK）
+{
+  "domains": [
+    {
+      "id": 1,
+      "domain_name": "example.com",
+      "expire_date": "2025-12-31",
+      ...
+    }
+  ]
+}
+```
+
+#### 前端自动鉴权实现
+
+系统前端已实现自动鉴权功能，无需手动添加 header：
+
+```javascript
+// public/js/app.js 中的实现
+
+// 统一 API 请求函数（自动添加鉴权 header）
+async function apiRequest(url, options = {}) {
+  const accessKey = localStorage.getItem("access_key");
+
+  const headers = {
+    ...options.headers,
+  };
+
+  // 自动添加 X-Access-Key（白名单端点除外）
+  if (!url.includes("/api/verify") && accessKey) {
+    headers["X-Access-Key"] = accessKey;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
+
+// 使用示例
+apiRequest("/api/domains", { method: "GET" })
+  .then((response) => response.json())
+  .then((data) => console.log(data));
+```
+
+#### 安全最佳实践
+
+1. **使用强密钥**：至少 32 位随机字符串
+2. **定期更换**：建议每季度更换一次访问密钥
+3. **HTTPS 加密**：生产环境必须启用 HTTPS（Cloudflare Workers 默认启用）
+4. **不要硬编码**：密钥应存储在环境变量中，不要写入源代码
+5. **监控日志**：定期检查 Cloudflare Workers 日志，排查异常访问
+6. **限制访问范围**：可在 Cloudflare Workers 中添加 IP 白名单（高级功能）
+
+#### 重置访问密钥
+
+如果密钥泄露，需要立即重置：
+
+```bash
+# 1. 生成新密钥
+NEW_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+echo "新密钥: $NEW_KEY"
+
+# 2. 更新环境变量（本地）
+# 编辑 wrangler.toml，修改 ACCESS_KEY
+
+# 3. 部署更新
+npm run deploy
+
+# 4. 清除所有客户端缓存
+# 通知用户刷新页面并使用新密钥重新登录
+```
+
+**生产环境重置步骤：**
+
+1. 在 Cloudflare Dashboard 中更新 `ACCESS_KEY` 环境变量
+2. 点击 **Save and Deploy**
+3. 通知所有用户：旧密钥立即失效，需使用新密钥重新登录
+4. 用户访问系统时会自动跳转到验证页面
+5. 输入新密钥即可恢复访问
+
+---
+
 ### 域名管理接口
 
 | 方法   | 路径             | 说明         |
@@ -744,9 +971,104 @@ wrangler d1 execute domain-manage-db --command="SELECT * FROM settings" --json >
 
 ### 1. 忘记访问密钥怎么办？
 
-查看 `wrangler.toml` 文件中的 `ACCESS_KEY` 值，或重新生成并部署。
+**本地开发环境：**
 
-### 2. Telegram 通知不工作？
+查看 `wrangler.toml` 文件中的 `ACCESS_KEY` 值：
+
+```toml
+[vars]
+ACCESS_KEY = "your-password-here"  # 这就是你的密钥
+```
+
+**生产环境：**
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 **Workers & Pages** → 选择项目 → **Settings** → **Variables**
+3. 找到 `ACCESS_KEY` 变量，点击右侧 **👁️ (View)** 查看明文
+
+如果无法查看，只能重新生成新密钥并重新部署。
+
+### 2. API 请求返回 401 Unauthorized 错误？
+
+**可能原因 1：未登录或密钥过期**
+
+- 解决方案：刷新页面，重新输入正确的访问密钥
+
+**可能原因 2：密钥配置错误**
+
+检查 `wrangler.toml` 中的 `ACCESS_KEY` 是否与你输入的密钥一致：
+
+```bash
+# 查看当前配置
+cat wrangler.toml | grep ACCESS_KEY
+
+# 确认输入的密钥是否正确
+```
+
+**可能原因 3：localStorage 缓存问题**
+
+打开浏览器开发者工具（F12）→ Console，执行：
+
+```javascript
+// 检查存储的密钥
+console.log(localStorage.getItem("access_key"));
+
+// 如果为 null 或错误，清除后重新登录
+localStorage.clear();
+location.reload();
+```
+
+**可能原因 4：使用第三方 API 客户端**
+
+确保请求头包含正确的密钥：
+
+```bash
+# cURL 示例
+curl -X GET https://your-domain.workers.dev/api/domains \
+  -H "X-Access-Key: your-correct-password"
+```
+
+### 3. 如何在自己的应用中调用 API？
+
+参考 [API 鉴权机制](#-api-鉴权机制) 章节，所有请求需携带 `X-Access-Key` header：
+
+```javascript
+// Node.js 示例
+const axios = require("axios");
+
+const api = axios.create({
+  baseURL: "https://your-domain.workers.dev",
+  headers: {
+    "X-Access-Key": "your-access-key",
+  },
+});
+
+// 获取域名列表
+const domains = await api.get("/api/domains");
+console.log(domains.data);
+```
+
+### 4. 访问密钥会过期吗？
+
+**不会自动过期**。密钥永久有效，直到你手动修改 `ACCESS_KEY` 环境变量。
+
+**安全建议：**
+
+- 定期更换密钥（建议每 3-6 个月）
+- 密钥泄露时立即重置
+- 使用强密钥（32 位以上随机字符串）
+
+### 5. 可以设置多个访问密钥吗？
+
+目前系统仅支持**单一密钥**。如需多用户访问，所有用户共用同一密钥。
+
+**未来计划：**
+
+- 多密钥支持（不同密钥分配不同权限）
+- JWT Token 认证（带过期时间）
+- API Key 管理界面
+
+### 6. Telegram 通知不工作？
 
 检查以下配置：
 
