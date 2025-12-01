@@ -136,6 +136,16 @@ async function handleAPI(request, env, path, method) {
     return verifyAccessKey(request, env);
   }
 
+  // 备份 API
+  if (path === "/api/backup" && method === "GET") {
+    return backupData(env);
+  }
+
+  // 导入 API
+  if (path === "/api/import" && method === "POST") {
+    return importData(request, env);
+  }
+
   return new Response(JSON.stringify({ error: "Not Found" }), {
     status: 404,
     headers: { "Content-Type": "application/json" },
@@ -781,6 +791,138 @@ async function verifyAccessKey(request, env) {
       }),
       {
         status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+/**
+ * 备份所有数据（设置 + 域名列表）
+ */
+async function backupData(env) {
+  try {
+    // 获取所有域名
+    const { results: domains } = await env.DB.prepare(
+      "SELECT * FROM domains ORDER BY domain_name ASC"
+    ).all();
+
+    // 获取所有设置
+    const { results: settingsRows } = await env.DB.prepare(
+      "SELECT key, value FROM settings"
+    ).all();
+
+    // 转换设置为对象格式
+    const settings = {};
+    settingsRows.forEach((row) => {
+      settings[row.key] = row.value;
+    });
+
+    // 构建备份数据
+    const backupData = {
+      version: "1.0",
+      exportTime: new Date().toISOString(),
+      data: {
+        settings,
+        domains,
+      },
+    };
+
+    return new Response(JSON.stringify(backupData, null, 2), {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="domain-backup-${
+          new Date().toISOString().split("T")[0]
+        }.json"`,
+      },
+    });
+  } catch (error) {
+    console.error("导入失败:", error);
+    return new Response(
+      JSON.stringify({ error: "导入失败: " + error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+/**
+ * 导入数据（恢复设置 + 域名列表）
+ */
+async function importData(request, env) {
+  try {
+    const body = await request.json();
+
+    // 验证数据格式
+    if (!body.data || !body.data.settings || !body.data.domains) {
+      return new Response(JSON.stringify({ error: "无效的备份文件格式" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { settings, domains } = body.data;
+
+    // 开始事务性操作
+    // 1. 清空现有数据
+    await env.DB.prepare("DELETE FROM domains").run();
+    await env.DB.prepare("DELETE FROM settings").run();
+
+    // 2. 导入设置
+    for (const [key, value] of Object.entries(settings)) {
+      await env.DB.prepare("INSERT INTO settings (key, value) VALUES (?, ?)")
+        .bind(key, value)
+        .run();
+    }
+
+    // 3. 导入域名
+    for (const domain of domains) {
+      await env.DB.prepare(
+        `INSERT INTO domains (
+          domain_name, registrar, registrar_url, hosting_provider, hosting_url,
+          purchase_price, renewal_price, purchase_period, renewal_period,
+          currency_symbol, expire_date, notes, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(
+          domain.domain_name,
+          domain.registrar || null,
+          domain.registrar_url || null,
+          domain.hosting_provider || null,
+          domain.hosting_url || null,
+          domain.purchase_price || null,
+          domain.renewal_price || null,
+          domain.purchase_period || null,
+          domain.renewal_period || null,
+          domain.currency_symbol || "¥",
+          domain.expire_date || null,
+          domain.notes || null,
+          domain.created_at || null,
+          domain.updated_at || null
+        )
+        .run();
+    }
+
+    return new Response(
+      JSON.stringify({
+        message: "导入成功",
+        imported: {
+          settings: Object.keys(settings).length,
+          domains: domains.length,
+        },
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("导入失败:", error);
+    return new Response(
+      JSON.stringify({ error: "导入失败: " + error.message }),
+      {
+        status: 500,
         headers: { "Content-Type": "application/json" },
       }
     );

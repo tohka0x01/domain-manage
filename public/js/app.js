@@ -603,6 +603,15 @@ function initEventListeners() {
   });
   elements.settingsForm.addEventListener("submit", handleSettingsSubmit);
 
+  // Backup & Import
+  document.getElementById("btnBackup").addEventListener("click", handleBackup);
+  document.getElementById("btnImport").addEventListener("click", () => {
+    document.getElementById("importFileInput").click();
+  });
+  document
+    .getElementById("importFileInput")
+    .addEventListener("change", handleImport);
+
   // Delete Modal
   document
     .getElementById("deleteCancel")
@@ -1248,6 +1257,132 @@ async function handleTelegramTest() {
   } finally {
     btn.innerHTML = originalContent;
     btn.disabled = false;
+  }
+}
+
+/**
+ * 处理备份功能
+ */
+async function handleBackup() {
+  const btn = document.getElementById("btnBackup");
+  const originalContent = btn.innerHTML;
+  btn.innerHTML =
+    '<div class="loader" style="width:16px;height:16px;border-width:2px;margin:0"></div>';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch(`${API_BASE}/backup`, {
+      method: "GET",
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // 从响应头获取文件名，如果没有则使用默认文件名
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `domain-backup-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showToast("✅ 备份成功！", "success");
+    } else {
+      const result = await response.json();
+      showToast(result.error || "❌ 备份失败", "error");
+    }
+  } catch (error) {
+    console.error("备份失败:", error);
+    showToast("❌ 备份失败: " + error.message, "error");
+  } finally {
+    btn.innerHTML = originalContent;
+    btn.disabled = false;
+  }
+}
+
+/**
+ * 处理导入功能
+ */
+async function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 验证文件类型
+  if (!file.name.endsWith(".json")) {
+    showToast("❌ 请选择 JSON 文件", "error");
+    event.target.value = ""; // 清空文件选择
+    return;
+  }
+
+  // 确认导入操作
+  if (
+    !confirm(
+      "⚠️ 导入将覆盖所有现有数据！\n\n确定要继续吗？\n\n建议先进行备份以防数据丢失。"
+    )
+  ) {
+    event.target.value = ""; // 清空文件选择
+    return;
+  }
+
+  const btn = document.getElementById("btnImport");
+  const originalContent = btn.innerHTML;
+  btn.innerHTML =
+    '<div class="loader" style="width:16px;height:16px;border-width:2px;margin:0"></div>';
+  btn.disabled = true;
+
+  try {
+    // 读取文件内容
+    const fileContent = await file.text();
+    const backupData = JSON.parse(fileContent);
+
+    // 发送导入请求
+    const response = await fetch(`${API_BASE}/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(backupData),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      showToast(
+        `✅ 导入成功！设置: ${result.imported.settings} 项，域名: ${result.imported.domains} 个`,
+        "success"
+      );
+
+      // 关闭设置弹窗
+      closeModal(elements.settingsModal);
+
+      // 重新加载数据
+      await Promise.all([loadSettings(), loadDomains(), loadStats()]);
+      applySettings();
+    } else {
+      showToast(result.error || "❌ 导入失败", "error");
+    }
+  } catch (error) {
+    console.error("导入失败:", error);
+    if (error instanceof SyntaxError) {
+      showToast("❌ 无效的 JSON 文件格式", "error");
+    } else {
+      showToast("❌ 导入失败: " + error.message, "error");
+    }
+  } finally {
+    btn.innerHTML = originalContent;
+    btn.disabled = false;
+    event.target.value = ""; // 清空文件选择，允许重新选择同一文件
   }
 }
 

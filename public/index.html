@@ -571,8 +571,6 @@
             <small class="form-hint">Comma separated days, e.g. 30,7</small>
           </div>
 
-      
-
           <div class="form-group">
             <label for="telegramBotToken">Telegram Bot Token</label>
             <div class="input-with-action">
@@ -641,17 +639,65 @@
           </div>
         </form>
         <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" id="settingsCancel">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="settingsForm"
-            class="btn btn-primary btn-glow"
-            id="settingsSave"
-          >
-            Save Settings
-          </button>
+          <div style="display: flex; gap: 8px">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="btnBackup"
+              title="备份数据"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="width: 16px; height: 16px; margin-right: 4px"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              备份
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="btnImport"
+              title="导入数据"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="width: 16px; height: 16px; margin-right: 4px"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-15"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              导入
+            </button>
+            <input
+              type="file"
+              id="importFileInput"
+              accept=".json"
+              style="display: none"
+            />
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button type="button" class="btn btn-ghost" id="settingsCancel">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="settingsForm"
+              class="btn btn-primary btn-glow"
+              id="settingsSave"
+            >
+              Save Settings
+            </button>
+          </div>
         </div>
       </div>
     </div>

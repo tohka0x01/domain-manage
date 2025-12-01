@@ -95,19 +95,9 @@
 > - **通知提前天数** - 自定义到期提醒时间（默认：30、15、7、3、1 天）
 > - **站点名称** - 自定义系统标题
 >
-> **🔄 同步上游更新**：
+> **🔄 获取更新**：
 >
-> 由于 Deploy Button 创建的是独立仓库（非 fork），如需同步原仓库更新：
->
-> ```bash
-> # 添加上游仓库
-> git remote add upstream https://github.com/tohka0x01/domain-manage.git
->
-> # 同步更新
-> git fetch upstream
-> git merge upstream/master
-> git push origin master
-> ```
+> 部署后如需同步原仓库的新功能和 Bug 修复，请查看 [🔄 更新到最新版本](#-更新到最新版本) 章节。
 
 ---
 
@@ -279,6 +269,177 @@ npm run deploy
 4. **开始添加域名**
 
    点击右上角"添加域名"按钮，填写域名信息即可
+
+---
+
+## 🔄 更新到最新版本
+
+### 📖 更新机制说明
+
+通过 **Deploy to Cloudflare Workers** 按钮部署的项目，会在您的 GitHub 账户下创建一个**独立的仓库副本**（不是传统的 fork）。
+
+**这意味着：**
+
+- ✅ 您拥有完整的仓库控制权
+- ✅ 可以自由修改代码而不影响原仓库
+- ❌ **不会自动同步**原仓库的更新
+- ❌ 重新点击 Deploy 按钮会创建**新的仓库**，而非更新现有仓库
+
+### 🔧 更新方式
+
+当原仓库有新功能或 Bug 修复时，您可以通过以下两种方式更新：
+
+---
+
+#### **方式一：使用 Git 命令行（推荐）**
+
+**适用场景：** 熟悉 Git 操作的用户
+
+**步骤：**
+
+1. **克隆您的仓库到本地**（如果还未克隆）
+
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/domain-manage.git
+   cd domain-manage
+   ```
+
+2. **添加原仓库为上游源**
+
+   ```bash
+   git remote add upstream https://github.com/tohka0x01/domain-manage.git
+   ```
+
+3. **获取上游更新**
+
+   ```bash
+   git fetch upstream
+   ```
+
+4. **合并更新到您的主分支**
+
+   ```bash
+   git checkout master
+   git merge upstream/master
+   ```
+
+5. **处理可能的冲突**（如果有）
+
+   - 如果您修改过代码，可能会出现冲突
+   - 手动编辑冲突文件，保留所需的更改
+   - 完成后执行：
+     ```bash
+     git add .
+     git commit -m "Merge upstream updates"
+     ```
+
+6. **推送更新到您的 GitHub 仓库**
+
+   ```bash
+   git push origin master
+   ```
+
+7. **触发 Cloudflare 自动部署**
+
+   - 推送到 GitHub 后，Cloudflare 会**自动检测变更**并重新部署
+   - 等待 1-2 分钟即可看到更新生效
+
+---
+
+#### **方式二：使用 GitHub Web 界面**
+
+**适用场景：** 不熟悉命令行的用户
+
+**步骤：**
+
+1. **访问您的 GitHub 仓库**
+
+   打开 `https://github.com/YOUR_USERNAME/domain-manage`
+
+2. **创建 Pull Request 同步更新**
+
+   - 点击仓库页面上方的 **"Sync fork"** 下拉菜单（如果可见）
+   - 或者点击 **"Fetch upstream"** → **"Fetch and merge"**
+
+   > ⚠️ **注意**：由于 Deploy Button 创建的不是标准 fork，这个按钮可能不显示
+
+3. **手动比较和合并（如果上述按钮不可用）**
+
+   - 访问原仓库：`https://github.com/tohka0x01/domain-manage`
+   - 点击 **"Code"** → **"Download ZIP"** 下载最新代码
+   - 解压后，将需要更新的文件复制到您的仓库
+   - 通过 GitHub Web 界面上传文件并提交
+
+4. **等待自动部署**
+
+   - GitHub 推送后，Cloudflare Workers 会自动重新部署
+   - 查看部署状态：访问 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Workers & Pages
+
+---
+
+### ⚙️ 验证更新是否成功
+
+**检查步骤：**
+
+1. **查看 GitHub 仓库的最新提交**
+
+   - 确认您的仓库已包含原仓库的最新提交记录
+
+2. **访问您的 Workers 域名**
+
+   - 刷新页面（Ctrl/Cmd + Shift + R 强制刷新）
+   - 检查新功能是否出现
+
+3. **查看 Cloudflare 部署日志**
+   - 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+   - 进入 **Workers & Pages** → 选择您的项目
+   - 查看 **Deployments** 标签确认最新部署时间
+
+---
+
+### ❓ 常见问题
+
+**Q1: 我修改过代码，更新会覆盖我的改动吗？**
+
+A: 使用 Git 合并时，您的自定义改动会被保留。如果出现冲突，Git 会提示您手动解决。
+
+**Q2: 更新后访问密钥需要重新设置吗？**
+
+A: 不需要。`wrangler.toml` 中的配置（包括 `ACCESS_KEY`）会保留，除非您主动修改。
+
+**Q3: 更新后数据库数据会丢失吗？**
+
+A: 不会。更新只影响代码，Cloudflare D1 数据库中的数据完全独立存储。
+
+**Q4: 我可以跳过某些更新吗？**
+
+A: 可以。使用 Git 命令行方式，您可以选择性地合并特定提交或文件。
+
+**Q5: 如何知道原仓库有新更新？**
+
+A: 建议：
+
+- ⭐ **Star** 原仓库：`https://github.com/tohka0x01/domain-manage`
+- 🔔 **Watch** → **Custom** → 勾选 **Releases**（仅关注版本发布）
+- 📰 定期查看原仓库的 **Commits** 或 **Releases** 页面
+
+---
+
+### 🔗 快速命令参考
+
+```bash
+# 一次性更新完整流程（已配置 upstream 的情况）
+git fetch upstream
+git merge upstream/master
+git push origin master
+
+# 查看当前配置的远程仓库
+git remote -v
+
+# 如果需要删除 upstream 重新添加
+git remote remove upstream
+git remote add upstream https://github.com/tohka0x01/domain-manage.git
+```
 
 ---
 
@@ -614,6 +775,58 @@ crons = ["0 2 * * *"]  # 修改为 UTC 02:00（北京时间 10:00）
 - 确认数据库 ID 配置正确
 - 查看浏览器控制台是否有错误信息
 - 尝试清除浏览器缓存
+
+### 6. D1 数据库有哪些限制？
+
+#### **📦 存储限制**
+
+| 计划类型         | 单库大小            | 账户总存储 | 数据库数量 |
+| ---------------- | ------------------- | ---------- | ---------- |
+| **Free Plan**    | 500 MB              | 5 GB       | 10 个      |
+| **Workers Paid** | **10 GB（硬限制）** | 1 TB       | 50,000 个  |
+
+> ⚠️ **重要**：10 GB 是单个数据库的**硬性限制**，即使付费也无法突破。需要更大容量时，官方推荐拆分为多个数据库。
+
+#### **📊 读写配额（Free Plan）**
+
+| 指标             | 每日限制        | 重置时间       |
+| ---------------- | --------------- | -------------- |
+| **Rows Read**    | 5,000,000 行/天 | 每天 00:00 UTC |
+| **Rows Written** | 100,000 行/天   | 每天 00:00 UTC |
+
+**Workers Paid Plan**：前 250 亿行读取 + 前 5000 万行写入/月免费，超出部分按 $0.001/百万行读取、$1/百万行写入计费。
+
+#### **🔍 实际使用场景（域名管理系统）**
+
+假设管理 **500 个域名**，每月操作：
+
+| 操作          | 频率      | Rows Read   | Rows Written |
+| ------------- | --------- | ----------- | ------------ |
+| 查看域名列表  | 100 次/月 | 50,000      | 0            |
+| 添加/编辑域名 | 70 次/月  | 70          | 70           |
+| 定时检查到期  | 30 次/月  | 15,000      | 0            |
+| **月度总计**  | -         | **~65,000** | **~70**      |
+
+**结论**：
+
+- ✅ **Free Plan** 完全足够（每日 500 万行读取配额）
+- ✅ 存储占用 < 1 MB（远低于 500 MB 限制）
+- ✅ 即使扩展到 **10,000 域名**，月读取量仍在 Paid Plan 免费额度内（$0/月）
+
+#### **💡 优化建议**
+
+```sql
+-- ❌ 低效：全表扫描
+SELECT * FROM domains WHERE expiry_date < '2024-12-31';
+
+-- ✅ 高效：创建索引
+CREATE INDEX idx_expiry_date ON domains(expiry_date);
+```
+
+**参考资料**：
+
+- [D1 定价详情](https://developers.cloudflare.com/d1/platform/pricing/)
+- [D1 平台限制](https://developers.cloudflare.com/d1/platform/limits/)
 
 ---
 

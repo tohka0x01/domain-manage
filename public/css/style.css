@@ -632,6 +632,28 @@ select:focus {
   background: rgba(0, 0, 0, 0.05);
 }
 
+.btn-secondary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary svg {
+  flex-shrink: 0;
+}
+
 .btn-danger {
   background: var(--color-danger);
   color: white;
