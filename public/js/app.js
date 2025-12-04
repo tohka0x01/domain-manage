@@ -723,6 +723,10 @@ function renderDomainList() {
     btn.addEventListener("click", () => openEditModal(btn.dataset.id));
   });
 
+  document.querySelectorAll(".copy-btn").forEach((btn) => {
+    btn.addEventListener("click", () => openCopyModal(btn.dataset.id));
+  });
+
   document.querySelectorAll(".delete-btn").forEach((btn) => {
     btn.addEventListener("click", () =>
       openDeleteModal(btn.dataset.id, btn.dataset.name)
@@ -902,6 +906,12 @@ function createDomainCard(domain) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
+        <button class="action-btn copy-btn" data-id="${domain.id}" title="Copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
         </button>
         <button class="action-btn delete delete-btn" data-id="${
@@ -1108,6 +1118,46 @@ function openEditModal(id) {
   }
 
   openModal(elements.domainModal);
+}
+
+function openCopyModal(id) {
+  const domain = domains.find((d) => d.id === parseInt(id));
+  if (!domain) return;
+
+  // 设置为新增模式
+  editingDomainId = null;
+  elements.modalTitle.textContent = t("modalAddTitle");
+
+  // 复制所有信息（包括域名）
+  elements.domainName.value = domain.domain_name;
+  elements.registrar.value = domain.registrar || "";
+  elements.registrarUrl.value = domain.registrar_url || "";
+  elements.hostingProvider.value = domain.hosting_provider || "";
+  elements.hostingUrl.value = domain.hosting_url || "";
+  elements.purchasePrice.value = domain.purchase_price || "";
+  elements.renewalPrice.value = domain.renewal_price || "";
+  elements.purchasePeriod.value = domain.purchase_period || "";
+  elements.renewalPeriod.value = domain.renewal_period || "";
+  elements.currencySymbol.value = domain.currency_symbol || "¥";
+  elements.notes.value = domain.notes || "";
+
+  if (domain.expire_date) {
+    elements.expireDate.value = domain.expire_date;
+    elements.expireDate.disabled = false;
+    elements.noExpireBtn.classList.remove("active");
+  } else {
+    elements.expireDate.value = "";
+    elements.expireDate.disabled = true;
+    elements.noExpireBtn.classList.add("active");
+  }
+
+  openModal(elements.domainModal);
+
+  // 将焦点设置到域名输入框并选中文本
+  setTimeout(() => {
+    elements.domainName.focus();
+    elements.domainName.select();
+  }, 100);
 }
 
 function openDeleteModal(id, name) {

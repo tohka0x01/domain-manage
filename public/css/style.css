@@ -982,6 +982,10 @@ select:focus {
   color: white;
 }
 
+.action-btn.copy-btn:hover {
+  background: var(--color-success);
+}
+
 .action-btn.delete:hover {
   background: var(--color-danger);
 }
